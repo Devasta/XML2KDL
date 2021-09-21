@@ -179,7 +179,7 @@
                  can be encoded as span { - "some "; b "bold"; - " text" }.
                  -->
             <xsl:when test="count(*) &gt; 0 and count(text()) &gt; 0">
-                <xsl:text>{</xsl:text>
+                <xsl:text> {</xsl:text>
                 <xsl:text>&#xa;</xsl:text>
                 <xsl:for-each select="node()">
                     <xsl:choose>
