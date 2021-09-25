@@ -10,7 +10,7 @@
         The full KDL specification can be found at https://kdl.dev/
 
         The spec for XML-in-KDL can be found at https://github.com/kdl-org/kdl/blob/main/XML-IN-KDL.md
-        
+
     -->
 
     <!-- HELPER FUNCTIONS -->
@@ -86,16 +86,15 @@
     <xsl:template name="indent">
         <!-- Rough attempt at indenting the output file. -->
         <xsl:param name="indents" select="0"/>
-        <xsl:choose>
-            <xsl:when test="$indents = 0"></xsl:when>
-            <xsl:otherwise>
-                <xsl:text>    </xsl:text>
-                <xsl:call-template name="indent">
-                    <xsl:with-param name="indents" select="$indents -1 "/>
-                </xsl:call-template>
-            </xsl:otherwise>
-        </xsl:choose>
+        <!-- Why &#32; instead of just a space? MSXML6 seems to strip padding for spaces unless you do so. -->
+        <xsl:if test="$indents &gt; 0">
+            <xsl:text>&#32;&#32;&#32;&#32;</xsl:text>
+            <xsl:call-template name="indent">
+                <xsl:with-param name="indents" select="$indents -1 "/>
+            </xsl:call-template>
+        </xsl:if>
     </xsl:template>
+
 
     <!-- HELPER FUNCTIONS END HERE -->
     <!-- ACTUAL TRANSFORM START HERE -->
@@ -105,7 +104,7 @@
         <xsl:call-template name="indent">
             <xsl:with-param name="indents" select="$indents"/>
         </xsl:call-template>
-        
+
         <!-- KDL comments take the format
             // single line comment
             or
@@ -144,9 +143,9 @@
         <xsl:value-of select="name()"/>
         <xsl:text>=</xsl:text>
         <xsl:text>"</xsl:text>
-            <xsl:call-template name="KDLCharEscape">
-                <xsl:with-param name="val" select="."/>
-            </xsl:call-template>
+        <xsl:call-template name="KDLCharEscape">
+            <xsl:with-param name="val" select="."/>
+        </xsl:call-template>
         <xsl:text>"</xsl:text>
     </xsl:template>
 
@@ -158,7 +157,7 @@
         </xsl:call-template>
         <xsl:value-of select = "name(.)"/>
         <xsl:if test="count(*) = 0 and string-length(normalize-space(.)) &gt; 0">
-        <xsl:text> </xsl:text>
+            <xsl:text> </xsl:text>
             <xsl:text>&quot;</xsl:text>
             <xsl:call-template name="KDLCharEscape">
                 <xsl:with-param name="val" select="."/>
@@ -175,11 +174,11 @@
             <!-- Mixed Content, split into list and reapply templates. -->
             <!-- If the element contains mixed text and element children,
                  the text can be encoded as a KDL node with the name - with a single string unnamed argument.
-                 For example, the XML <span>some <b>bold</b> text</span> 
+                 For example, the XML <span>some <b>bold</b> text</span>
                  can be encoded as span { - "some "; b "bold"; - " text" }.
                  -->
             <xsl:when test="count(*) &gt; 0 and count(text()) &gt; 0">
-                <xsl:text> {</xsl:text>
+                <xsl:text>{</xsl:text>
                 <xsl:text>&#xa;</xsl:text>
                 <xsl:for-each select="node()">
                     <xsl:choose>
