@@ -133,9 +133,9 @@
         -->
         <xsl:text>?</xsl:text>
         <xsl:value-of select="name()"/>
-        <xsl:text> r#</xsl:text>
+        <xsl:text> r#"</xsl:text>
         <xsl:value-of select="normalize-space(.)"/>
-        <xsl:text>#;</xsl:text>
+        <xsl:text>"#;</xsl:text>
         <xsl:text>&#xa;</xsl:text>
     </xsl:template>
 
