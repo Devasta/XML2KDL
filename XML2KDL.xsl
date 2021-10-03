@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-    <xsl:output method="text" encoding="UTF-8" />
+<xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                version="1.0">
+    <xsl:output method="text" encoding="UTF-8"/>
 
     <xsl:strip-space elements="*"/>
 
@@ -50,7 +51,7 @@
                                         <xsl:call-template name="replace-string">
                                             <xsl:with-param name="text">
                                                 <xsl:call-template name="replace-string">
-                                                    <xsl:with-param name="text" select="normalize-space($val)"/>
+                                                    <xsl:with-param name="text" select="$val"/>
                                                     <!-- Double quote character -->
                                                     <xsl:with-param name="replace"><xsl:text>\</xsl:text></xsl:with-param>
                                                     <xsl:with-param name="with"><xsl:text>\\</xsl:text></xsl:with-param>
@@ -80,13 +81,12 @@
             <xsl:with-param name="replace"><xsl:text>&#10;</xsl:text></xsl:with-param>
             <xsl:with-param name="with"><xsl:text>\n</xsl:text></xsl:with-param>
         </xsl:call-template>
-
     </xsl:template>
 
     <xsl:template name="indent">
         <!-- Rough attempt at indenting the output file. -->
         <xsl:param name="indents" select="0"/>
-        <!-- Why &#32; instead of just a space? MSXML6 seems to strip padding for spaces unless you do so. -->
+        <!-- Why &#32; instead of just a space? MSXML6 strips spaces from all text fields that are space only. -->
         <xsl:if test="$indents &gt; 0">
             <xsl:text>&#32;&#32;&#32;&#32;</xsl:text>
             <xsl:call-template name="indent">
@@ -139,7 +139,7 @@
     </xsl:template>
 
     <xsl:template match="@*">
-        <xsl:text> </xsl:text>
+        <xsl:text>&#32;</xsl:text>
         <xsl:value-of select="name()"/>
         <xsl:text>=</xsl:text>
         <xsl:text>"</xsl:text>
@@ -149,21 +149,37 @@
         <xsl:text>"</xsl:text>
     </xsl:template>
 
-
     <xsl:template match="*">
         <xsl:param name="indents" select="0"/>
         <xsl:call-template name="indent">
             <xsl:with-param name="indents" select="$indents"/>
         </xsl:call-template>
         <xsl:value-of select = "name(.)"/>
-        <xsl:if test="count(*) = 0 and string-length(normalize-space(.)) &gt; 0">
-            <xsl:text> </xsl:text>
-            <xsl:text>&quot;</xsl:text>
-            <xsl:call-template name="KDLCharEscape">
-                <xsl:with-param name="val" select="."/>
-            </xsl:call-template>
-            <xsl:text>&quot;</xsl:text>
-        </xsl:if>
+        <xsl:choose>
+            <!-- We'll try and keep formatting of XHTML <pre> tags... no promises though! -->
+            <xsl:when test="name(.)='pre' and namespace-uri()='http://www.w3.org/1999/xhtml' and count(*) = 0 ">
+                <xsl:text>&#32;</xsl:text>
+                <xsl:text>r#"</xsl:text>
+                <xsl:value-of select="name(.)"/>
+                <xsl:value-of select="."/>
+                <xsl:text>"#</xsl:text>
+            </xsl:when>
+            <xsl:when test="count(*) = 0 and string-length(normalize-space(.)) &gt; 0">
+                <xsl:text>&#32;</xsl:text>
+                <xsl:text>&quot;</xsl:text>
+                <xsl:call-template name="KDLCharEscape">
+                    <xsl:with-param name="val" select="normalize-space(.)"/>
+                </xsl:call-template>
+                <!--
+                    We want to strip excess whitespace, but it is probably still useful to include a single trailing
+                    whitespace, for mixed content.
+                 -->
+                <xsl:if test="substring(., string-length(.) - string-length('&#32;') +1) = '&#32;'">
+                    <xsl:text>&#32;</xsl:text>
+                </xsl:if>
+                <xsl:text>&quot;</xsl:text>
+            </xsl:when>
+        </xsl:choose>
         <xsl:apply-templates select="@*"/>
         <xsl:choose>
             <!-- End line if no child nodes -->
@@ -178,7 +194,7 @@
                  can be encoded as span { - "some "; b "bold"; - " text" }.
                  -->
             <xsl:when test="count(*) &gt; 0 and count(text()) &gt; 0">
-                <xsl:text>{</xsl:text>
+                <xsl:text> {</xsl:text>
                 <xsl:text>&#xa;</xsl:text>
                 <xsl:for-each select="node()">
                     <xsl:choose>
@@ -209,7 +225,7 @@
             </xsl:when>
             <!-- Brackets and reapply templates if there are children -->
             <xsl:when test="count(*) &gt; 0">
-                <xsl:text> {</xsl:text>
+                <xsl:text>-{</xsl:text>
                 <xsl:text>&#xa;</xsl:text>
                 <xsl:apply-templates>
                     <xsl:with-param name="indents" select="$indents + 1"/>
@@ -223,4 +239,5 @@
             </xsl:when>
         </xsl:choose>
     </xsl:template>
+
 </xsl:transform>
